@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Управление каналами мониторинга</h2>
+
+<div class="card" style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; max-width: 500px;">
+    <h3>➕ Добавить новый канал</h3>
+    <form action="{{ url_for('channels') }}" method="POST">
+        <div style="margin-bottom: 10px;">
+            <input type="text" name="username" placeholder="Username (без @, например: neuroprofit)" required
+                   style="width: 100%; padding: 8px; box-sizing: border-box;">
+        </div>
+        <div style="margin-bottom: 10px;">
+            <input type="text" name="title" placeholder="Понятное название канала" required
+                   style="width: 100%; padding: 8px; box-sizing: border-box;">
+        </div>
+        <button type="submit" style="background-color: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; width: auto;">
+            Сохранить канал
+        </button>
+    </form>
+</div>
+
+<div class="card" style="padding: 15px; border: 1px solid #ddd;">
+    <h3>📋 Список каналов в базе</h3>
+
+    {% if not channels %}
+        <p>Каналов пока нет. Добавьте первый канал выше.</p>
+    {% endif %}
+
+    {% for ch in channels %}
+        <div class="channel-item" style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+            <p>
+                <strong>{{ ch.title }}</strong>
+                <span style="color: #666; font-size: 0.9em;">(@{{ ch.username }})</span>
+            </p>
+
+            {% if active and ch.id == active.id %}
+                <span style="color: #28a745; font-weight: bold; background: #eaffea; padding: 5px 10px; border-radius: 4px;">
+                    ✅ Активен (слушаю сообщения)
+                </span>
+            {% else %}
+                <a href="{{ url_for('activate_channel', channel_id=ch.id) }}">
+                    <button style="background-color: #6c757d; color: white; border: none; padding: 5px 15px; cursor: pointer; border-radius: 4px;">
+                        Сделать активным
+                    </button>
+                </a>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

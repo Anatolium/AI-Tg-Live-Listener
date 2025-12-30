@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Последние собранные сообщения</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Канал</th>
+            <th>Дата</th>
+            <th>Текст</th>
+            <th>Сводка</th>
+        </tr>
+    </thead>
+<tbody>
+    {% for summary, ch in rows %}
+    <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 10px;"><strong>{{ ch.title }}</strong></td>
+
+        <td style="padding: 10px; font-size: 0.9em;">
+            {{ summary.created_at.strftime('%d.%m %H:%M') if summary.created_at else '---' }}
+        </td>
+
+        <td style="padding: 10px; font-size: 0.85em; color: #666;">
+            {% if summary.range_start and summary.range_end %}
+                {{ summary.range_start.strftime('%H:%M') }} — {{ summary.range_end.strftime('%H:%M') }}
+            {% else %}
+                Период не указан
+            {% endif %}
+        </td>
+
+        <td style="padding: 10px;">
+            <div style="height: 4.5em; line-height: 1.5em; overflow-y: auto; border: 1px solid #f0f0f0; padding: 5px; background: #fafafa; font-size: 0.9em; white-space: pre-wrap;">{{ summary.content }}</div>
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+</table>
+{% endblock %}

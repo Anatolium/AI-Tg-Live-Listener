@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title or "TG Listener" }}</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #dff5e3, #b7eac5);
+        }
+
+        header {
+            background: linear-gradient(90deg, #6fcf97, #56cc9d);
+            padding: 15px 30px;
+            color: white;
+            font-size: 18px;
+        }
+
+        header a {
+            color: white;
+            margin-right: 20px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .container {
+            padding: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+
+        button {
+            background: #6fcf97;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #56cc9d;
+        }
+
+        input {
+            padding: 6px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="/channels">📡 Каналы</a>
+    <a href="/stats">📊 Статистика</a>
+    <a href="/messages">💬 Сообщения</a>
+</header>
+
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Статистика</h2>
+
+<div class="card">
+    <p><strong>Всего сообщений:</strong> {{ stats.total }}</p>
+    <p><strong>Проанализировано:</strong> {{ stats.analyzed }}</p>
+    <p><strong>Последняя сводка:</strong> {{ stats.last_summary or "—" }}</p>
+</div>
+
+{% endblock %}
