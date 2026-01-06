@@ -2,19 +2,16 @@ import os
 import uuid
 import aiohttp
 import logging
-import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# 1. Определяем корень проекта относительно этого файла (поднимаемся на уровень выше)
+# Определяем корень проекта относительно этого файла (поднимаемся на уровень выше)
 root_dir = Path(__file__).resolve().parent.parent
 
-# 2. Загружаем .env именно из корня
 load_dotenv(root_dir / ".env")
 
 logger = logging.getLogger("gigachat")
 
-# 3. Теперь переменные точно подтянутся
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 

@@ -2,52 +2,67 @@
 
 {% block content %}
 
-<h2>Управление каналами мониторинга</h2>
+<div style="display: flex; gap: 20px; align-items: start;">
+    <!-- Левая колонка: Добавить новый канал -->
+    <div class="card" style="padding: 15px; border: 1px solid #ddd; max-width: 500px; flex-shrink: 0;">
+        <h3>➕ Добавить новый канал</h3>
+        <form action="{{ url_for('channels') }}" method="POST">
+            <div style="margin-bottom: 10px;">
+                <input type="text" name="username" placeholder="Username (без @, e.g. neuroprofit)" required
+                       style="width: 100%; padding: 8px; box-sizing: border-box;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <input type="text" name="title" placeholder="Понятное название канала" required
+                       style="width: 100%; padding: 8px; box-sizing: border-box;">
+            </div>
+            <button type="submit" style="background-color: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; width: auto;">
+                Сохранить канал
+            </button>
+        </form>
+    </div>
 
-<div class="card" style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; max-width: 500px;">
-    <h3>➕ Добавить новый канал</h3>
-    <form action="{{ url_for('channels') }}" method="POST">
-        <div style="margin-bottom: 10px;">
-            <input type="text" name="username" placeholder="Username (без @, например: neuroprofit)" required
-                   style="width: 100%; padding: 8px; box-sizing: border-box;">
-        </div>
-        <div style="margin-bottom: 10px;">
-            <input type="text" name="title" placeholder="Понятное название канала" required
-                   style="width: 100%; padding: 8px; box-sizing: border-box;">
-        </div>
-        <button type="submit" style="background-color: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; width: auto;">
-            Сохранить канал
-        </button>
-    </form>
-</div>
+    <!-- Правая колонка: Список каналов в базе -->
+    <div class="card" style="padding: 15px; border: 1px solid #ddd; max-width: 600px; flex-grow: 1;">
+        <h3>📋 Список каналов в базе</h3>
 
-<div class="card" style="padding: 15px; border: 1px solid #ddd;">
-    <h3>📋 Список каналов в базе</h3>
+        {% if not channels %}
+            <p>Каналов пока нет. Добавьте первый канал.</p>
+        {% endif %}
 
-    {% if not channels %}
-        <p>Каналов пока нет. Добавьте первый канал выше.</p>
-    {% endif %}
+        {% for ch in channels %}
+            <div class="channel-item"
+                 style="margin-bottom: 15px; padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center;">
+                <form method="POST" action="{{ url_for('toggle_channel', channel_id=ch.id) }}" style="display: inline; margin-right: 10px;">
+                    <label style="display: inline-block; position: relative; cursor: pointer;">
+                        <input type="checkbox" name="toggle" onchange="this.form.submit()"
+                               {% if ch.is_monitored %}checked{% endif %}
+                               style="appearance: none; -webkit-appearance: none; -moz-appearance: none; width: 22px; height: 22px; border: 2px solid #28a745; background: {% if ch.is_monitored %}#28a745{% else %}white{% endif %}; border-radius: 4px; cursor: pointer; position: relative; outline: none;">
+                        {% if ch.is_monitored %}
+                            <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: bold; font-size: 18px;">✓</span>
+                        {% endif %}
+                    </label>
+                </form>
 
-    {% for ch in channels %}
-        <div class="channel-item" style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-            <p>
-                <strong>{{ ch.title }}</strong>
-                <span style="color: #666; font-size: 0.9em;">(@{{ ch.username }})</span>
-            </p>
+                <p style="margin: 0; flex-grow: 1; font-weight: {% if ch.is_monitored %}bold{% endif %};">
+                    {% if ch.is_monitored %}
+                        <span style="background-color: #d4edda; color: #28a745; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline;">
+                            {{ ch.title }} <span style="color: #28a745;">(@{{ ch.username }})</span>
+                        </span>
+                    {% else %}
+                        {{ ch.title }}
+                        <span style="color: #666; font-size: 0.9em;">(@{{ ch.username }})</span>
+                    {% endif %}
+                </p>
 
-            {% if active and ch.id == active.id %}
-                <span style="color: #28a745; font-weight: bold; background: #eaffea; padding: 5px 10px; border-radius: 4px;">
-                    ✅ Активен (слушаю сообщения)
-                </span>
-            {% else %}
-                <a href="{{ url_for('activate_channel', channel_id=ch.id) }}">
-                    <button style="background-color: #6c757d; color: white; border: none; padding: 5px 15px; cursor: pointer; border-radius: 4px;">
-                        Сделать активным
+                <form method="POST" action="{{ url_for('delete_channel', channel_id=ch.id) }}" style="display: inline;">
+                    <button type="submit" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;"
+                            onclick="return confirm('Вы уверены, что хотите удалить канал {{ ch.title }}?')">
+                        Удалить
                     </button>
-                </a>
-            {% endif %}
-        </div>
-    {% endfor %}
+                </form>
+            </div>
+        {% endfor %}
+    </div>
 </div>
 
 {% endblock %}

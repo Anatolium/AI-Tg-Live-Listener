@@ -1,9 +1,9 @@
 import datetime
-import os
+import pytz
 from typing import Optional, Sequence
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, DateTime,
-    ForeignKey, select, update, func
+    ForeignKey, select, update, func, delete
 )
 from sqlalchemy.ext.asyncio import (
     AsyncEngine, AsyncSession, create_async_engine, async_sessionmaker
@@ -19,7 +19,11 @@ DATABASE_URL = f"sqlite+aiosqlite:///{BASE_DIR / DB_NAME}"
 Base = declarative_base()
 
 
-# --- МОДЕЛИ ---
+def msk_now():
+    tz_msk = pytz.timezone('Europe/Moscow')
+    msk_time = datetime.datetime.now(tz_msk)
+    return msk_time.replace(tzinfo=None)  # <-- naive datetime (московское)
+
 
 class Channel(Base):
     __tablename__ = "channels"
@@ -27,7 +31,7 @@ class Channel(Base):
     chat_id = Column(Integer, unique=True, nullable=True)
     username = Column(String(255), unique=True, nullable=False)
     title = Column(String(255), nullable=False)
-    is_active = Column(Boolean, default=False, nullable=False)
+    is_monitored = Column(Boolean, default=False, nullable=False)
 
 
 class Message(Base):
@@ -37,7 +41,7 @@ class Message(Base):
     chat_id = Column(Integer, ForeignKey("channels.id"), nullable=False)
     sender = Column(String(255))
     text = Column(Text, nullable=False)
-    date = Column(DateTime, default=datetime.datetime.utcnow)
+    date = Column(DateTime, default=msk_now)  # <-- московское naive datetime
     is_summarized = Column(Boolean, default=False, nullable=False)
 
 
@@ -45,13 +49,11 @@ class Summary(Base):
     __tablename__ = "summaries"
     id = Column(Integer, primary_key=True)
     channel_id = Column(Integer, ForeignKey("channels.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=msk_now)  # <-- московское naive datetime
     range_start = Column(DateTime)
     range_end = Column(DateTime)
     content = Column(Text, nullable=False)
 
-
-# --- МЕНЕДЖЕР БД ---
 
 class Database:
     def __init__(self, url: str = DATABASE_URL):
@@ -75,30 +77,31 @@ class Database:
             result = await session.execute(select(Channel).order_by(Channel.title))
             return result.scalars().all()
 
-    async def set_active_channel(self, channel_id: int):
+    async def get_channel_by_id(self, channel_id: int):
         async with self.session_factory() as session:
-            await session.execute(update(Channel).values(is_active=False))
+            result = await session.execute(select(Channel).where(Channel.id == channel_id))
+            return result.scalar_one_or_none()
+
+    async def set_channel_monitored(self, channel_id: int, monitored: bool):
+        async with self.session_factory() as session:
             await session.execute(
-                update(Channel).where(Channel.id == channel_id).values(is_active=True)
+                update(Channel).where(Channel.id == channel_id).values(is_monitored=monitored)
             )
             await session.commit()
 
-    async def get_active_channel(self) -> Optional[Channel]:
+    async def get_monitored_channels(self) -> Sequence[Channel]:
         async with self.session_factory() as session:
-            result = await session.execute(select(Channel).where(Channel.is_active == True))
-            return result.scalar_one_or_none()
+            result = await session.execute(select(Channel).where(Channel.is_monitored == True))
+            return result.scalars().all()
 
     async def save_message(self, channel_id, msg_id, sender_id, text):
         async with self.session_factory() as session:
-            from tg_listener.db import Message as MsgModel
-            import datetime
-
-            new_msg = MsgModel(
+            new_msg = Message(
                 msg_id=msg_id,
                 chat_id=channel_id,
                 sender=str(sender_id),
                 text=text or "[Медиа или пустое сообщение]",
-                date=datetime.datetime.now(),  # Можно брать из event.date, если передать его
+                date=datetime.datetime.now(),
                 is_summarized=False
             )
             session.add(new_msg)
@@ -110,14 +113,19 @@ class Database:
             summarized = await session.execute(
                 select(func.count(Message.id)).where(Message.is_summarized == True)
             )
-            # Добавили получение времени последнего саммари
             last_sum = await session.execute(
                 select(Summary.created_at).order_by(Summary.created_at.desc()).limit(1)
             )
+
+            last_summary = last_sum.scalar_one_or_none()
+            if last_summary:
+                tz_msk = pytz.timezone('Europe/Moscow')
+                last_summary = last_summary.replace(tzinfo=pytz.utc).astimezone(tz_msk)
+
             return {
                 "total": total.scalar() or 0,
                 "analyzed": summarized.scalar() or 0,
-                "last_summary": last_sum.scalar_one_or_none()
+                "last_summary": last_summary
             }
 
     async def save_summary(self, channel_id: int, content: str, start_dt: datetime.datetime, end_dt: datetime.datetime):
@@ -129,7 +137,6 @@ class Database:
                 range_end=end_dt
             )
             session.add(new_summary)
-            # Обновляем статус сообщений
             await session.execute(
                 update(Message)
                 .where(Message.chat_id == channel_id)
@@ -137,3 +144,17 @@ class Database:
                 .values(is_summarized=True)
             )
             await session.commit()
+
+    async def delete_channel(self, channel_id: int):
+        async with self.session_factory() as session:
+            await session.execute(
+                update(Message).where(Message.chat_id == channel_id).values(is_summarized=False)
+            )
+            await session.execute(
+                delete(Summary).where(Summary.channel_id == channel_id)
+            )
+            await session.execute(
+                delete(Channel).where(Channel.id == channel_id)
+            )
+            await session.commit()
+            return True

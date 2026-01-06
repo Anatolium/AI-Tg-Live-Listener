@@ -22,7 +22,7 @@
 
         <td style="padding: 10px; font-size: 0.85em; color: #666;">
             {% if summary.range_start and summary.range_end %}
-                {{ summary.range_start.strftime('%H:%M') }} — {{ summary.range_end.strftime('%H:%M') }}
+                {{ summary.range_start.strftime('%d.%m %H:%M') }} – {{ summary.range_end.strftime('%d.%m %H:%M') }}
             {% else %}
                 Период не указан
             {% endif %}

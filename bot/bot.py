@@ -13,12 +13,11 @@ from summary_service import summarize_messages
 # Отключаем предупреждения SSL для GigaChat
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Настраиваем пути и окружение
+# Пути и окружение
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 load_dotenv(root_dir / ".env")
 
-# --- Конфигурация ---
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise RuntimeError("BOT_TOKEN не задан в .env")
@@ -38,7 +37,7 @@ async def start_command(message):
     await bot.send_message(
         message.chat.id,
         "🤖 **Бот-суммаризатор запущен.**\n\n"
-        "Команда: /summary — создать сводку по активному каналу.",
+        "Команда: /summary – создать сводку по активному каналу.",
         parse_mode="Markdown"
     )
 
@@ -48,10 +47,15 @@ async def summary_command(message):
     await bot.send_chat_action(message.chat.id, "typing")
 
     try:
-        active_channel = await db.get_active_channel()
-        if not active_channel:
-            await bot.send_message(message.chat.id, "❌ Активный канал не выбран в панели управления.")
-            return
+        # Получаем **любой** отмеченный как мониторимый канал (например, первый)
+        # Или можно сделать выбор канала через аргумент команды, если нужно.
+        async with db.session_factory() as session:
+            from tg_listener.db import Channel
+            from sqlalchemy import select
+            result = await session.execute(
+                select(Channel).where(Channel.is_monitored == True).limit(1)
+            )
+            active_channel = result.scalar_one_or_none()
 
         async with db.session_factory() as session:
             result = await session.execute(
@@ -84,7 +88,7 @@ async def summary_command(message):
 
             response = (
                 f"📊 **Сводка: {active_channel.title}**\n"
-                f"📅 Период: {start_dt.strftime('%H:%M')} — {end_dt.strftime('%H:%M')}\n\n"
+                f"📅 Период: {start_dt.strftime('%H:%M')} – {end_dt.strftime('%H:%M')}\n\n"
                 f"{summary_text}"
             )
             await bot.send_message(message.chat.id, response, parse_mode="Markdown")
