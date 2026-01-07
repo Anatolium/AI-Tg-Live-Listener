@@ -66,25 +66,40 @@ async def delete_channel(channel_id: int):
     return redirect(url_for("channels"))
 
 
-@app.route("/stats")
-async def stats():
-    stats_data = await db.get_stats()
-
-    # Конвертируем last_summary в МСК
-    if stats_data["last_summary"]:
-        tz_msk = pytz.timezone('Europe/Moscow')
-        # Предполагаем, что last_summary — объект datetime в UTC
-        msk_time = stats_data["last_summary"].replace(tzinfo=pytz.utc).astimezone(tz_msk)
-        stats_data["last_summary"] = msk_time
-
-    return render_template("stats.html", stats=stats_data)
-
-
 @app.route("/messages")
 async def messages():
     async with db.session_factory() as session:
         from sqlalchemy import select
+        from tg_listener.db import Message, Channel
+
+        # Получаем все прослушиваемые каналы
+        monitored_channels = await db.get_monitored_channels()
+        channel_ids = [ch.id for ch in monitored_channels]
+
+        if not channel_ids:
+            return render_template("messages.html", messages=[], total_count=0)
+
+        # Запрос: последние 20 сообщений из прослушиваемых каналов
+        stmt = (
+            select(Message)
+            .where(Message.chat_id.in_(channel_ids))
+            .order_by(Message.date.desc())
+            .limit(20)
+        )
+        result = await session.execute(stmt)
+        messages = result.scalars().all()
+
+        total_count = len(messages)  # Можно сделать отдельным запросом, если нужно точное общее количество
+
+    return render_template("messages.html", messages=messages, total_count=total_count)
+
+
+@app.route("/summary")
+async def summary():
+    async with db.session_factory() as session:
+        from sqlalchemy import select
         from tg_listener.db import Summary, Channel
+        import pytz
 
         stmt = (
             select(Summary, Channel)
@@ -95,10 +110,18 @@ async def messages():
         result = await session.execute(stmt)
         rows = result.all()
 
-    return render_template("messages.html", rows=rows)
+        # Конвертируем время в МСК
+        tz_msk = pytz.timezone('Europe/Moscow')
+        converted_rows = []
+        for summary, ch in rows:
+            if summary.created_at:
+                summary.created_at = summary.created_at.replace(tzinfo=pytz.utc).astimezone(tz_msk)
+            converted_rows.append((summary, ch))
+
+    return render_template("summary.html", rows=converted_rows)
 
 
-async def update_channels_periodically(listener, interval=10):
+async def update_channels_periodically(listener, interval=60):
     while True:
         await asyncio.sleep(interval)
         await listener.update_monitored_channels()
@@ -111,7 +134,7 @@ async def main():
     # 2. Запускаем фоновую задачу прослушивания Telegram
     # Используем create_task, чтобы листенер работал параллельно с сайтом
     listener_task = asyncio.create_task(listener.start())
-    updater_task = asyncio.create_task(update_channels_periodically(listener, 10))  # <-- каждые 10 сек
+    updater_task = asyncio.create_task(update_channels_periodically(listener, 60))  # <-- каждые 60 сек
 
     # 3. Конфигурация веб-сервера Hypercorn
     config = Config()

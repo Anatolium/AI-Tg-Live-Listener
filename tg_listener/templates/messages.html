@@ -1,38 +1,67 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Последние собранные сообщения</h2>
-<table class="table table-striped">
-    <thead>
+
+<h2>Список всех сообщений</h2>
+
+<p><strong>Всего сообщений:</strong> {{ total_count }}</p>
+
+<table class="table table-striped" style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+    <thead style="background: #f8f9fa; font-weight: bold;">
         <tr>
-            <th>Канал</th>
-            <th>Дата</th>
-            <th>Текст</th>
-            <th>Сводка</th>
+            <th style="padding: 8px; text-align: left; width: 5%;">ID</th>
+            <th style="padding: 8px; text-align: left; width: 12%;">Дата/Время</th>
+            <th style="padding: 8px; text-align: left; width: 8%;">Отправитель</th>
+            <th style="padding: 8px; text-align: left; width: 60%;">Текст сообщения</th>
+            <th style="padding: 8px; text-align: left; width: 15%;">Статус</th>
         </tr>
     </thead>
-<tbody>
-    {% for summary, ch in rows %}
-    <tr style="border-bottom: 1px solid #eee;">
-        <td style="padding: 10px;"><strong>{{ ch.title }}</strong></td>
-
-        <td style="padding: 10px; font-size: 0.9em;">
-            {{ summary.created_at.strftime('%d.%m %H:%M') if summary.created_at else '---' }}
-        </td>
-
-        <td style="padding: 10px; font-size: 0.85em; color: #666;">
-            {% if summary.range_start and summary.range_end %}
-                {{ summary.range_start.strftime('%d.%m %H:%M') }} – {{ summary.range_end.strftime('%d.%m %H:%M') }}
-            {% else %}
-                Период не указан
-            {% endif %}
-        </td>
-
-        <td style="padding: 10px;">
-            <div style="height: 4.5em; line-height: 1.5em; overflow-y: auto; border: 1px solid #f0f0f0; padding: 5px; background: #fafafa; font-size: 0.9em; white-space: pre-wrap;">{{ summary.content }}</div>
-        </td>
-    </tr>
-    {% endfor %}
-</tbody>
+    <tbody>
+        {% for msg in messages %}
+        <tr style="border-bottom: 1px solid #dee2e6; transition: background 0.2s; height: 30px;">
+            <td style="padding: 6px; vertical-align: top; font-weight: bold; color: #333; font-size: 0.9em;">
+                {{ msg.id }}
+            </td>
+            <td style="padding: 6px; vertical-align: top; font-size: 0.85em; color: #6c757d;">
+                {{ msg.date.strftime('%Y-%m-%d %H:%M:%S') }}
+            </td>
+            <td style="padding: 6px; vertical-align: top; font-size: 0.85em; color: #28a745;">
+                {{ msg.sender }}
+            </td>
+            <td style="padding: 6px; vertical-align: top; word-wrap: break-word; font-size: 0.9em;">
+                <div style="
+                    background: #fff;
+                    border: none;
+                    padding: 0;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.2;
+                    white-space: normal; /* <-- Ключевое изменение */
+                    overflow-y: auto;
+                    max-height: 50px;
+                    font-size: 0.95em;
+                    color: #212529;
+                    /* Прижимаем текст к левому и верхнему краю */
+                    text-indent: 0;
+                    margin: 0;
+                    padding: 0;
+                ">
+                    {{ msg.text | trim }}
+                </div>
+            </td>
+            <td style="padding: 6px; vertical-align: top; text-align: center; font-size: 0.8em;">
+                {% if msg.is_summarized %}
+                    <span style="background-color: #28a745; color: white; padding: 3px 6px; border-radius: 4px; font-weight: bold;">
+                        Проанализировано
+                    </span>
+                {% else %}
+                    <span style="background-color: #6c757d; color: white; padding: 3px 6px; border-radius: 4px;">
+                        Не проанализировано
+                    </span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
+
 {% endblock %}
