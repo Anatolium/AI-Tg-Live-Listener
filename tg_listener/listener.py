@@ -63,11 +63,17 @@ class TelegramListener:
                         if not channel:
                             return
 
+                        # ✅ Проверяем, начинается ли текст с "Пожалуйста, подождите"
+                        text = event.text or ""
+                        if text.startswith("Пожалуйста, подождите"):
+                            # print(f"⚠️ Сообщение из {chat.username} проигнорировано: начинается с 'Пожалуйста, подождите'")
+                            return
+
                         await self.db.save_message(
                             channel_id=channel.id,
                             msg_id=event.id,
                             sender_id=str(event.sender_id),
-                            text=event.text or ""
+                            text=text
                         )
                         print(f"✅ Сообщение из {chat.username} сохранено!")
             except Exception as e:

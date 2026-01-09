@@ -17,15 +17,11 @@
         <td style="padding: 10px;"><strong>{{ ch.title }}</strong></td>
 
         <td style="padding: 10px; font-size: 0.9em;">
-            {{ summary.created_at.strftime('%d.%m %H:%M') if summary.created_at else '---' }}
+            {{ summary.created_at.strftime('%d.%m.%y %H:%M') if summary.created_at else '---' }}
         </td>
 
-        <td style="padding: 10px; font-size: 0.85em; color: #666;">
-            {% if summary.range_start and summary.range_end %}
-                {{ summary.range_start.strftime('%H:%M') }} – {{ summary.range_end.strftime('%H:%M') }}
-            {% else %}
-                Период не указан
-            {% endif %}
+        <td style="padding: 10px; font-size: 0.9em;">
+            {{ summary.range_end.strftime('%d.%m.%y %H:%M') if summary.range_end else '---' }}
         </td>
 
         <td style="padding: 10px;">

@@ -111,11 +111,12 @@ async def summary():
         rows = result.all()
 
         # Конвертируем время в МСК
-        tz_msk = pytz.timezone('Europe/Moscow')
+        # tz_msk = pytz.timezone('Europe/Moscow')
         converted_rows = []
         for summary, ch in rows:
             if summary.created_at:
-                summary.created_at = summary.created_at.replace(tzinfo=pytz.utc).astimezone(tz_msk)
+                # summary.created_at = summary.created_at.replace(tzinfo=pytz.utc).astimezone(tz_msk)
+                summary.created_at = summary.created_at.replace(tzinfo=pytz.utc)
             converted_rows.append((summary, ch))
 
     return render_template("summary.html", rows=converted_rows)

@@ -28,14 +28,15 @@
             <td style="padding: 6px; vertical-align: top; font-size: 0.85em; color: #28a745;">
                 {{ msg.sender }}
             </td>
-            <td style="padding: 6px; vertical-align: top; word-wrap: break-word; font-size: 0.9em;">
+            <!-- Плохой код -->
+            <td style="padding: 6px; vertical-align: top; word-wrap: break-word; font-size: 0.95em;">
                 <div style="
                     background: #fff;
-                    border: none;
-                    padding: 0;
+                    border: none; /* Убрана граница */
+                    padding: 0; /* Полностью убраны отступы */
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                     line-height: 1.2;
-                    white-space: normal; /* <-- Ключевое изменение */
+                    white-space: normal;
                     overflow-y: auto;
                     max-height: 50px;
                     font-size: 0.95em;
@@ -48,6 +49,8 @@
                     {{ msg.text | trim }}
                 </div>
             </td>
+            <!-- Почти хороший код -->
+
             <td style="padding: 6px; vertical-align: top; text-align: center; font-size: 0.8em;">
                 {% if msg.is_summarized %}
                     <span style="background-color: #28a745; color: white; padding: 3px 6px; border-radius: 4px; font-weight: bold;">
