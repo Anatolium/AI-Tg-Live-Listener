@@ -28,6 +28,7 @@ TG Live Listener — это инструмент для мониторинга T
 - GigaChat (или другой LLM) — генерация сводок.
 
 ## 📁 Структура проекта
+```text
 AI-Tg-Live-Listener/
 ├── .env
 ├── tg_monitor.db
@@ -49,6 +50,7 @@ AI-Tg-Live-Listener/
   │ └── summary.html
   └── static/
     └── style.css
+```
 
 ## Создайте файл .env в корне проекта:
 
